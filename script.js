@@ -446,11 +446,13 @@ function passivePotatoGeneration() { if (isPrestiging || !isGameInitialized || i
 /** Checks prestige requirement and starts animation */
 function attemptPrestige() { console.log("Attempting prestige..."); if (isPrestiging || !isGameInitialized || isIntroSequenceActive) { console.log("Prestige blocked."); return; } console.log(`Checking prestige: Have ${formatNumber(potatoCount)}, Need ${formatNumber(currentPrestigeRequirement)}`); if (potatoCount >= currentPrestigeRequirement) { console.log("Requirement met. Starting animation."); startPrestigeAnimation(); } else { showMessage(`Need ${formatNumber(currentPrestigeRequirement)} current potatoes to Prestige!`, 2500, true); } }
 /** Finalizes prestige state changes after animation */
-function completePrestige() { console.log("Completing Prestige process..."); prestigeLevel++; prestigeMultiplier = 1 + prestigeLevel; potatoCount = 0; totalPotatoesHarvested = 0; totalClicks = 0; upgrades.forEach(u => u.level = 0); achievements = {}; isOnFireActive = false; onFireEndTime = 0; onFireCooldownEndTime = 0; onFireStreakLevel = 0; clickTimestamps = []; recalculateStats(); currentPrestigeRequirement = calculatePrestigeRequirement(prestigeLevel); showMessage(`PRESTIGE LVL ${prestigeLevel}! (${prestigeMultiplier}x Bonus)`, 3000, false); updateDisplay(); renderUpgrades(); renderAchievements(); updateCursors(); if (mainPotatoImg) { mainPotatoImg.src = ORIGINAL_POTATO_URL; mainPotatoImg.classList.remove('shake-animation'); } removeMeteor(false, 0); if (isDebugMenuUnlocked) { enableDebugFeatures(); } else { disableDebugFeatures(); } switchTab('clicks'); saveGame(); console.log(`Prestige complete. Lvl: ${prestigeLevel}. Next Req: ${formatNumber(currentPrestigeRequirement)}`); }
+function completePrestige() { console.log("Completing Prestige process..."); prestigeLevel++; prestigeMultiplier = 1 + prestigeLevel; potatoCount = 0; totalPotatoesHarvested = 0; totalClicks = 0; upgrades.forEach(u => u.level = 0); achievements = {}; isOnFireActive = false; onFireEndTime = 0; onFireCooldownEndTime = 0; onFireStreakLevel = 0; clickTimestamps = []; recalculateStats(); currentPrestigeRequirement = calculatePrestigeRequirement(prestigeLevel); showMessage(`PRESTIGE LVL ${prestigeLevel}! (${prestigeMultiplier}x Bonus)`, 3000, false); updateDisplay(); renderUpgrades(); renderAchievements(); updateCursors(); if (mainPotatoImg) { mainPotatoImg.src = ORIGINAL_POTATO_URL; mainPotatoImg.classList.remove('shake-animation'); } removeMeteor(false, 0); if (isDebugMenuUnlocked) { enableDebugFeatures(); } else { disableDebugFeatures(); } switchTab('clicks'); saveGame(); console.log(`Prestige complete. Lvl: ${prestigeLevel}. Next Req: ${formatNumber(currentPrestigeRequirement)}`); isPrestiging = false; console.log("isPrestiging flag set to false.");}
 /** Updates popularity display */
 function updatePopularity() { if (!popularityLevelDisplay || !farmerIcon || !popularityChatBubble) return; let tier = popularityTiers[popularityTiers.length - 1]; for (const t of popularityTiers) { if (totalPotatoesHarvested >= t.threshold) { tier = t; break; } } if (popularityLevelDisplay.textContent !== tier.name) { popularityLevelDisplay.textContent = tier.name; } let iconUrl = FARMER_ICON_URL; if (isDebugMenuUnlocked) { iconUrl = POTATOHAX_ICON_URL; } else { const pro = popularityTiers.find(t => t.name === "Potato Pro"); if (pro && totalPotatoesHarvested >= pro.threshold) { iconUrl = PRO_FARMER_ICON_URL; } } if (farmerIcon.getAttribute('src') !== iconUrl) { farmerIcon.src = iconUrl; } if (!isDebugMenuUnlocked) { if (popularityChatBubble.textContent !== tier.message || !popularityChatBubble.classList.contains('visible')) { popularityChatBubble.textContent = tier.message; popularityChatBubble.classList.add('visible'); } } else { const msg = "Click me ;)"; if (popularityChatBubble.textContent !== msg || !popularityChatBubble.classList.contains('visible')) { popularityChatBubble.textContent = msg; popularityChatBubble.classList.add('visible'); } } }
 /** Saves game state */
-function saveGame() { try { const state = { pc: potatoCount, tph: totalPotatoesHarvested, pl: prestigeLevel, upg: upgrades.map(u => ({ id: u.id, lvl: u.level })), ach: achievements, tc: totalClicks, debug: isDebugMenuUnlocked, ofs: onFireStreakLevel, version: 7.1 }; const str = JSON.stringify(state); const b64 = btoa(unescape(encodeURIComponent(str))); if (saveCodeArea) saveCodeArea.value = b64; localStorage.setItem(SAVE_KEY, b64); showMessage("Game Saved!", 1500, false); if (copySaveButton) copySaveButton.textContent = "Copy"; } catch (e) { console.error("Save Error:", e); showMessage("Error saving game!", 2000, true); localStorage.removeItem(SAVE_KEY); } }
+function saveGame() { try { const state = { pc: potatoCount, tph: totalPotatoesHarvested, pl: prestigeLevel, upg: upgrades.map(u => ({ id: u.id, lvl: u.level })), ach: achievements, tc: totalClicks, debug: isDebugMenuUnlocked, ofs: onFireStreakLevel, version: 7.1 }; console.log('State object BEFORE stringify:', state);
+// Specifically log the achievements part:
+console.log('Achievements object within state BEFORE stringify:', state.ach); const str = JSON.stringify(state); console.log('JSON string BEFORE base64 encoding:', str); const b64 = btoa(unescape(encodeURIComponent(str))); console.log('Base64 string to be saved:', b64); if (saveCodeArea) saveCodeArea.value = b64; localStorage.setItem(SAVE_KEY, b64); showMessage("Game Saved!", 1500, false); if (copySaveButton) copySaveButton.textContent = "Copy"; } catch (e) { console.error("Save Error:", e); showMessage("Error saving game!", 2000, true); localStorage.removeItem(SAVE_KEY); } }
 /** Placeholder loadGame - final version in Part 7 */
 function loadGame(loadString = null) { console.warn("Placeholder loadGame called."); return false; }
 /** Placeholder loadFromLocalStorage - final version in Part 7 */
@@ -715,7 +717,7 @@ function loadFromLocalStorage() {
 /** Loads game state from a save string, returns true if successful, false otherwise */
 function loadGame(loadString = null) {
     console.log("Running final loadGame function...");
-    const code = loadString ?? loadCodeArea?.value.trim();
+    const code = loadString ?? loadCodeArea?.value.trim(); console.log('Raw Base64 string from load input/localStorage:', code);
 
     // Handle Empty Input (only show msg on manual load)
     if (!code) {
@@ -730,6 +732,7 @@ function loadGame(loadString = null) {
              isDebugMenuUnlocked = true;
              // Don't call enableDebugFeatures here; initializeGame will handle it after load returns true.
              showAchievementNotification("Debug Menu Unlocked", true); // Show immediate feedback
+             enableDebugFeatures(); // Apply visual changes and listener NOW
              checkAchievements(); // Check debug achievement
              saveGame(); // Save unlocked state
         } else { if (!loadString) showMessage("Debug menu already unlocked!", 1500, false); }
@@ -740,8 +743,10 @@ function loadGame(loadString = null) {
     // Process Actual Save Code
     try {
         console.log("Decoding save string...");
-        const jsonString = decodeURIComponent(escape(atob(code)));
-        const loadedState = JSON.parse(jsonString);
+        const jsonString = decodeURIComponent(escape(atob(code))); console.log('Decoded JSON string:', jsonString);
+        const loadedState = JSON.parse(jsonString); console.log('Parsed loadedState object:', loadedState);
+// Specifically log the achievements part:
+console.log('Achievements object within loadedState:', loadedState.ach);
         console.log("Save string decoded and parsed.");
 
         // --- Validation ---
@@ -755,7 +760,7 @@ function loadGame(loadString = null) {
         potatoCount = Number(loadedState.pc) || 0;
         totalPotatoesHarvested = Number(loadedState.tph) || 0;
         prestigeLevel = Number(loadedState.pl) || 0;
-        achievements = (typeof loadedState.ach === 'object' && loadedState.ach !== null) ? loadedState.ach : {};
+        achievements = (typeof loadedState.ach === 'object' && loadedState.ach !== null) ? loadedState.ach : {}; console.log('Game achievements variable set to:', achievements);
         totalClicks = Number(loadedState.tc) || 0;
         isDebugMenuUnlocked = Boolean(loadedState.debug) || false; // Restore debug flag status
         onFireStreakLevel = Number(loadedState.ofs) || 0;
